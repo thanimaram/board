@@ -20,7 +20,7 @@ function DashedEdge({
         markerEnd={markerEnd}
         style={{
           strokeDasharray: '8 4',
-          stroke: selected ? '#818cf8' : '#6366f1',
+          stroke: selected ? '#818cf8' : '#478cca',
           strokeWidth: selected ? 3 : 2,
         }}
       />

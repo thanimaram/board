@@ -3,13 +3,12 @@ import { memo, useRef } from 'react';
 import { useReactFlow } from '@xyflow/react';
 
 const LINE_COLORS = [
-  '#6366f1', '#ef4444', '#10b981', '#f59e0b',
+  '#478cca', '#ef4444', '#10b981', '#f59e0b',
   '#06b6d4', '#1a1a2e', '#7c3aed', '#ec4899',
 ];
-const STROKE_WIDTHS = [1, 2, 4, 6];
 
 function LineNode({ data, selected, id }) {
-  const { dx = 100, dy = 0, style = 'solid', color = '#6366f1', strokeWidth = 2 } = data;
+  const { dx = 100, dy = 0, style = 'solid', color = '#478cca', strokeWidth = 2 } = data;
   const { getZoom } = useReactFlow();
   const dragState = useRef(null);
 
@@ -52,13 +51,23 @@ function LineNode({ data, selected, id }) {
   return (
     <div className={`line-node ${selected ? 'selected' : ''}`} style={{ width: w, height: h }}>
       <svg width={w} height={h} style={{ display: 'block', overflow: 'visible' }}>
-        {/* Plain line — no arrow */}
+        <defs>
+          <marker id={`arrowhead-${color.replace('#', '')}`} markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill={color} />
+          </marker>
+          <marker id={`arrowhead-reverse-${color.replace('#', '')}`} markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto">
+            <polygon points="10 0, 0 3.5, 10 7" fill={color} />
+          </marker>
+        </defs>
+        {/* The line */}
         <line
           x1={sx} y1={sy} x2={ex} y2={ey}
           stroke={color}
           strokeWidth={strokeWidth}
           strokeDasharray={style === 'dotted' ? '8 5' : undefined}
           strokeLinecap="round"
+          markerEnd={(style === 'arrow' || style === 'doubleArrow') ? `url(#arrowhead-${color.replace('#', '')})` : undefined}
+          markerStart={style === 'doubleArrow' ? `url(#arrowhead-reverse-${color.replace('#', '')})` : undefined}
         />
 
         {/* Start dot — nodrag prevents React Flow treating it as a node-drag */}
@@ -85,18 +94,6 @@ function LineNode({ data, selected, id }) {
                 style={{ background: c }}
                 onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); data.onUpdate?.(id, { color: c }); }}
               />
-            ))}
-          </div>
-          <div className="line-widths">
-            {STROKE_WIDTHS.map((sw) => (
-              <button
-                key={sw}
-                className={`width-btn ${strokeWidth === sw ? 'active' : ''}`}
-                onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); data.onUpdate?.(id, { strokeWidth: sw }); }}
-                title={`${sw}px`}
-              >
-                <span className="width-preview" style={{ height: sw, background: color }} />
-              </button>
             ))}
           </div>
         </div>

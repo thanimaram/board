@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 const SHAPES = ['rect', 'rounded', 'circle', 'diamond', 'parallelogram', 'database'];
 const COLOR_PRESETS = [
-  { fill: '#ffffff', border: '#6366f1', text: '#1a1a2e' },
+  { fill: '#ffffff', border: '#478cca', text: '#1a1a2e' },
   { fill: '#ffffff', border: '#2563eb', text: '#1e3a8a' },
   { fill: '#ffffff', border: '#059669', text: '#14532d' },
   { fill: '#ffffff', border: '#d97706', text: '#78350f' },

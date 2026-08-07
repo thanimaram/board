@@ -6,7 +6,7 @@
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Backgrounds */
-  --bg-canvas:     #f0f2f7;
+  --bg-canvas:     #ffffff;
   --bg-surface:    #ffffff;
   --bg-elevated:   #f8f9fb;
   --bg-hover:      #f1f4f9;
@@ -14,7 +14,7 @@
   /* Borders */
   --border-subtle: rgba(0,0,0,0.06);
   --border-dim:    rgba(0,0,0,0.12);
-  --border-active: rgba(99,102,241,0.55);
+  --border-active: rgba(71,140,202,0.55);
 
   /* Text */
   --text-primary:   #1a1a2e;
@@ -22,7 +22,7 @@
   --text-muted:     #9898b8;
 
   /* Accent */
-  --accent-violet: #6366f1;
+  --accent-primary: #478cca;
   --accent-cyan:   #06b6d4;
   --accent-green:  #10b981;
   --accent-red:    #ef4444;
@@ -33,7 +33,7 @@
   --shadow-lg:  0 8px 32px rgba(0,0,0,0.12);
   --shadow-node: 0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
   --shadow-node-hover: 0 6px 24px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08);
-  --glow-violet: 0 0 0 3px rgba(99,102,241,0.2);
+  --glow-violet: 0 0 0 3px rgba(71,140,202,0.2);
 
   /* Radii */
   --r-sm:  6px;
@@ -71,7 +71,7 @@ button { font-family: var(--font); cursor: pointer; }
 .board-loading-spinner {
   width: 40px; height: 40px;
   border: 3px solid var(--border-dim);
-  border-top-color: var(--accent-violet);
+  border-top-color: var(--accent-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -96,7 +96,7 @@ button { font-family: var(--font); cursor: pointer; }
 }
 .toolbar-logo {
   font-size: 22px;
-  background: linear-gradient(135deg, var(--accent-violet), var(--accent-cyan));
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -136,9 +136,9 @@ button { font-family: var(--font); cursor: pointer; }
   border-color: var(--border-dim);
 }
 .tool-btn.active {
-  background: rgba(99,102,241,0.1);
-  color: var(--accent-violet);
-  border-color: rgba(99,102,241,0.35);
+  background: rgba(71,140,202,0.1);
+  color: var(--accent-primary);
+  border-color: rgba(71,140,202,0.35);
   box-shadow: var(--glow-violet);
 }
 .tool-btn.danger { color: var(--accent-red); }
@@ -154,33 +154,177 @@ button { font-family: var(--font); cursor: pointer; }
   border-radius: 4px; padding: 1px 5px;
 }
 .tool-btn.active .tool-shortcut {
-  background: rgba(99,102,241,0.12);
-  border-color: rgba(99,102,241,0.3);
-  color: var(--accent-violet);
+  background: rgba(71,140,202,0.12);
+  border-color: rgba(71,140,202,0.3);
+  color: var(--accent-primary);
 }
 
 .toolbar-hint { padding: 6px 6px 0; }
 .toolbar-hint p { font-size: 10.5px; color: var(--text-muted); line-height: 1.9; }
 
+/* ─── Draggable toolbar items ────────────────────────────────────────────── */
+.draggable-item {
+  cursor: grab;
+  user-select: none;
+}
+.draggable-item:active { cursor: grabbing; }
+.draggable-item:hover .drag-hint { opacity: 1; transform: translateX(0); }
+
+.drag-hint {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  background: rgba(71,140,202,0.1);
+  border: 1px solid rgba(71,140,202,0.25);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: auto;
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease);
+  pointer-events: none;
+}
+
+/* Drop zone highlight when dragging over canvas */
+.board-canvas.drag-over {
+  outline: 2px dashed rgba(71,140,202,0.45);
+  outline-offset: -4px;
+}
+
+/* ─── Equipment List ─────────────────────────────────────────────────────── */
+.equipment-section { display: flex; flex-direction: column; gap: 6px; padding: 2px 4px 6px; }
+
+.account-select {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--r-md);
+  font-family: var(--font); font-size: 12px; font-weight: 500;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--fast);
+  appearance: auto;
+}
+.account-select:focus { border-color: var(--accent-primary); }
+
+.account-label {
+  font-size: 11px; font-weight: 600;
+  color: var(--accent-primary);
+  background: rgba(71,140,202,0.07);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  margin: 0;
+}
+
+.equipment-empty {
+  font-size: 11px; color: var(--text-muted);
+  text-align: center; padding: 8px 0;
+  font-style: italic;
+}
+
+.equipment-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 3px;
+}
+
+.equipment-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  cursor: grab;
+  user-select: none;
+  transition: background var(--fast), border-color var(--fast), box-shadow var(--fast);
+}
+.equipment-item:hover {
+  background: #f0fdf4;
+  border-color: rgba(16,185,129,0.35);
+  box-shadow: 0 2px 8px rgba(16,185,129,0.1);
+}
+.equipment-item:active { cursor: grabbing; }
+.equipment-item:hover .drag-hint { opacity: 1; transform: translateX(0); }
+
+.equip-serial {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+  color: #065f46;
+  background: #d1fae5;
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.equip-name {
+  flex: 1;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equip-delete {
+  background: none; border: none;
+  color: var(--text-muted);
+  font-size: 15px; line-height: 1;
+  cursor: pointer; padding: 0 2px;
+  border-radius: 3px;
+  transition: color var(--fast), background var(--fast);
+  flex-shrink: 0;
+}
+.equip-delete:hover { color: var(--accent-red); background: rgba(239,68,68,0.08); }
+
+.equip-add-row {
+  display: flex; gap: 6px; align-items: center;
+  margin-top: 2px;
+}
+.equip-input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--r-md);
+  font-family: var(--font); font-size: 12px;
+  outline: none;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color var(--fast);
+}
+.equip-input:focus { border-color: var(--accent-green); }
+.equip-input::placeholder { color: var(--text-muted); }
+
+.equip-add-btn {
+  width: 28px; height: 28px;
+  border: none; border-radius: var(--r-md);
+  background: var(--accent-green);
+  color: white; font-size: 18px; font-weight: 400;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: background var(--fast), transform var(--fast);
+}
+.equip-add-btn:hover { background: #059669; transform: scale(1.08); }
+
 /* ─── ReactFlow Canvas ───────────────────────────────────────────────────── */
 .react-flow__background { background: var(--bg-canvas) !important; }
 .react-flow__pane       { cursor: inherit !important; }
 
-/* Edge paths */
+/* Edge paths — no !important so per-edge inline colors take effect */
 .react-flow__edge-path {
-  stroke: var(--accent-violet) !important;
-  stroke-width: 2 !important;
+  stroke: var(--accent-primary);
+  stroke-width: 2;
 }
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: #818cf8 !important;
-  stroke-width: 3 !important;
+  stroke: #818cf8;
+  stroke-width: 3;
 }
 
 /* Handles */
 .react-flow__handle {
   width: 10px !important; height: 10px !important;
   border-radius: 50% !important;
-  background: var(--accent-violet) !important;
+  background: var(--accent-primary) !important;
   border: 2px solid white !important;
   opacity: 0;
   transition: opacity var(--fast), transform var(--fast), box-shadow var(--fast);
@@ -190,7 +334,7 @@ button { font-family: var(--font); cursor: pointer; }
 .react-flow__node.selected .react-flow__handle { opacity: 1; }
 .react-flow__handle:hover {
   transform: scale(1.5) !important;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.25) !important;
+  box-shadow: 0 0 0 3px rgba(71,140,202,0.25) !important;
 }
 
 /* Controls */
@@ -226,14 +370,14 @@ button { font-family: var(--font); cursor: pointer; }
 
 /* Selection box */
 .react-flow__selection {
-  background: rgba(99,102,241,0.06) !important;
-  border: 1.5px solid rgba(99,102,241,0.45) !important;
+  background: rgba(71,140,202,0.06) !important;
+  border: 1.5px solid rgba(71,140,202,0.45) !important;
   border-radius: 4px !important;
 }
 
 /* Node resizer */
 .react-flow__resize-control.handle {
-  background: var(--accent-violet) !important;
+  background: var(--accent-primary) !important;
   border-color: white !important;
   width: 8px !important; height: 8px !important;
   border-radius: 2px !important;
@@ -256,7 +400,7 @@ button { font-family: var(--font); cursor: pointer; }
 /* ─── Shape Node (Premium Cards) ─────────────────────────────────────────── */
 .shape-node {
   position: relative;
-  min-width: 140px; min-height: 50px;
+  min-width: 100px; min-height: 40px;
   display: flex; align-items: stretch; justify-content: stretch;
   overflow: visible;
   cursor: grab;
@@ -272,7 +416,7 @@ button { font-family: var(--font); cursor: pointer; }
 .shape-bg {
   position: absolute; inset: 0;
   background: var(--node-fill, #fff);
-  border: 2px solid var(--node-border, #6366f1);
+  border: 2px solid var(--node-border, #478cca);
   border-radius: var(--r-md);
   transition: box-shadow var(--normal) var(--ease), border-color var(--normal) var(--ease);
   box-shadow: var(--shadow-node);
@@ -281,8 +425,8 @@ button { font-family: var(--font); cursor: pointer; }
 
 .shape-node:hover .shape-bg { box-shadow: var(--shadow-node-hover); }
 .shape-node.selected .shape-bg {
-  border-color: var(--node-border, #6366f1);
-  box-shadow: var(--shadow-node-hover), 0 0 0 3px rgba(99,102,241,0.18);
+  border-color: var(--node-border, #478cca);
+  box-shadow: var(--shadow-node-hover), 0 0 0 3px rgba(71,140,202,0.18);
 }
 
 /* Rect */
@@ -318,7 +462,7 @@ button { font-family: var(--font); cursor: pointer; }
   top: -12px; left: -2px; right: -2px;
   height: 22px;
   background: var(--node-fill, #fff);
-  border: 2px solid var(--node-border, #6366f1);
+  border: 2px solid var(--node-border, #478cca);
   border-radius: 50%;
 }
 
@@ -357,7 +501,7 @@ button { font-family: var(--font); cursor: pointer; }
   background: transparent; border: none; outline: none;
   font-family: var(--font); font-size: 13.5px; font-weight: 500;
   text-align: center; width: 100%; min-width: 60px;
-  caret-color: var(--accent-violet);
+  caret-color: var(--accent-primary);
 }
 
 /* ─── Region Node (Background Layer) ─────────────────────────────────────── */
@@ -450,14 +594,14 @@ button { font-family: var(--font); cursor: pointer; }
   padding: 8px 12px; border: 1px solid var(--border-dim); 
   border-radius: var(--r-md); font-family: inherit; font-size: 14px; outline: none;
 }
-.modal-form-group input:focus { border-color: var(--accent-violet); }
+.modal-form-group input:focus { border-color: var(--accent-primary); }
 .modal-shape-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .shape-select-btn {
   padding: 8px; background: var(--bg-canvas);
   border: 1px solid var(--border-dim); border-radius: var(--r-md);
   cursor: pointer; font-size: 13px; text-transform: capitalize;
 }
-.shape-select-btn.active { border-color: var(--accent-violet); background: rgba(99,102,241,0.05); color: var(--accent-violet); font-weight: 600; }
+.shape-select-btn.active { border-color: var(--accent-primary); background: rgba(71,140,202,0.05); color: var(--accent-primary); font-weight: 600; }
 .modal-color-grid { display: flex; gap: 8px; flex-wrap: wrap; }
 .attr-add-row { display: flex; gap: 8px; }
 .attr-add-row input { flex: 1; }
@@ -473,8 +617,8 @@ button { font-family: var(--font); cursor: pointer; }
 .btn-primary { background: var(--text-primary); color: white; border: none; padding: 8px 16px; border-radius: var(--r-md); cursor: pointer; font-weight: 600; }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary { background: var(--bg-canvas); color: var(--text-base); border: 1px solid var(--border-dim); padding: 8px 16px; border-radius: var(--r-md); cursor: pointer; font-weight: 500; }
-.add-custom-btn { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--accent-violet); padding: 0 4px; border-radius: 4px; }
-.add-custom-btn:hover { background: rgba(99,102,241,0.1); }
+.add-custom-btn { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--accent-primary); padding: 0 4px; border-radius: 4px; }
+.add-custom-btn:hover { background: rgba(71,140,202,0.1); }
 
 .modal-color-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .color-swatch {
@@ -483,7 +627,7 @@ button { font-family: var(--font); cursor: pointer; }
   box-shadow: 0 0 0 1px var(--border-dim) inset;
 }
 .color-swatch:hover { opacity: 0.8; }
-.color-swatch.active { box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-violet); border-color: white; }
+.color-swatch.active { box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-primary); border-color: white; }
 
 /* ─── Node Attributes Panel (Canvas Popup) ─────────────────────────────── */
 .node-attributes-panel {
@@ -500,7 +644,7 @@ button { font-family: var(--font); cursor: pointer; }
   border: 1px solid transparent; background: var(--bg-canvas);
   padding: 4px 6px; border-radius: 4px; font-size: 12px; font-family: inherit; width: 100%; outline: none;
 }
-.attr-input:focus { border-color: var(--accent-violet); background: white; }
+.attr-input:focus { border-color: var(--accent-primary); background: white; }
 
 /* ─── Line Node Controls ────────────────────────────────────────────────── */
 .line-controls {
@@ -514,7 +658,7 @@ button { font-family: var(--font); cursor: pointer; }
   width: 16px; height: 16px; border-radius: 50%; border: 2px solid transparent;
   cursor: pointer; padding: 0; box-shadow: 0 0 0 1px var(--border-dim) inset;
 }
-.color-dot.active { border-color: white; box-shadow: 0 0 0 2px var(--accent-violet); }
+.color-dot.active { border-color: white; box-shadow: 0 0 0 2px var(--accent-primary); }
 .line-widths { display: flex; gap: 4px; border-left: 1px solid var(--border-dim); padding-left: 12px; }
 .width-btn {
   background: none; border: none; padding: 4px; cursor: pointer;
@@ -522,7 +666,7 @@ button { font-family: var(--font); cursor: pointer; }
   width: 24px; height: 24px;
 }
 .width-btn:hover { background: var(--bg-hover); }
-.width-btn.active { background: rgba(99,102,241,0.1); }
+.width-btn.active { background: rgba(71,140,202,0.1); }
 .width-preview { width: 100%; border-radius: 2px; }
 
 /* ─── Background Shapes & Regions ──────────────────────────────────────── */
@@ -530,11 +674,11 @@ button { font-family: var(--font); cursor: pointer; }
   border-width: 2px; border-style: dashed; border-radius: var(--r-md);
   padding: 8px; box-sizing: border-box; display: flex; flex-direction: column;
 }
-.region-node.selected { border-style: solid; box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-violet); }
+.region-node.selected { border-style: solid; box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-primary); }
 .region-header { font-size: 14px; font-weight: 700; opacity: 0.8; margin-bottom: 8px; }
 .region-label-input { background: none; border: none; font-size: 14px; font-weight: 700; width: 100%; outline: none; }
 .bg-shape-node { position: relative; }
-.bg-shape-node.selected { box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-violet); border-radius: inherit; }
+.bg-shape-node.selected { box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--accent-primary); border-radius: inherit; }
 .bg-shape-inner { position: absolute; inset: 0; pointer-events: none; }
 .bg-shape-inner-diamond { transform: rotate(45deg) scale(0.707); }
 .bg-shape-inner-parallelogram { transform: skewX(-20deg); margin: 0 20px; }
@@ -553,7 +697,7 @@ button { font-family: var(--font); cursor: pointer; }
   background: transparent; border: none; outline: none;
   font-family: var(--font); font-size: 13.5px; font-weight: 500;
   color: var(--text-primary); text-align: center; width: 100%;
-  caret-color: var(--accent-violet);
+  caret-color: var(--accent-primary);
 }
 
 /* ─── Color Picker (shared by ShapeNode) ─────────────────────────────────── */
@@ -635,9 +779,9 @@ button { font-family: var(--font); cursor: pointer; }
 }
 .fmt-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .fmt-btn.active {
-  background: rgba(99,102,241,0.12);
-  color: var(--accent-violet);
-  border-color: rgba(99,102,241,0.3);
+  background: rgba(71,140,202,0.12);
+  color: var(--accent-primary);
+  border-color: rgba(71,140,202,0.3);
 }
 .fmt-btn.bold       { font-weight: 800; }
 .fmt-btn.italic-btn { font-style: italic; }
@@ -706,8 +850,8 @@ button { font-family: var(--font); cursor: pointer; }
 }
 .width-btn:hover { background: var(--bg-hover); border-color: var(--border-active); }
 .width-btn.active {
-  background: rgba(99,102,241,0.1);
-  border-color: rgba(99,102,241,0.4);
+  background: rgba(71,140,202,0.1);
+  border-color: rgba(71,140,202,0.4);
 }
 .width-preview {
   display: block;

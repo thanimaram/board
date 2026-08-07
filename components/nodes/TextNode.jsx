@@ -2,16 +2,15 @@
 import { memo, useRef, useEffect, useCallback } from 'react';
 import { NodeResizer } from '@xyflow/react';
 
-const FONT_SIZES = [12, 14, 16, 20, 24, 32];
 const TEXT_COLORS = [
-  '#1a1a2e', '#6366f1', '#ef4444', '#10b981',
+  '#1a1a2e', '#478cca', '#ef4444', '#10b981',
   '#f59e0b', '#06b6d4', '#7c3aed', '#ec4899',
 ];
 
 function TextNode({ data, selected, id }) {
   const {
     text = '',
-    fontSize = 16,
+    fontSize = 14,
     textColor = '#1a1a2e',
     bold = false,
     italic = false,
@@ -56,18 +55,6 @@ function TextNode({ data, selected, id }) {
             className={`fmt-btn italic-btn ${italic ? 'active' : ''}`}
             onPointerDown={(e) => { e.preventDefault(); emit({ italic: !italic }); }}
           ><em>I</em></button>
-
-          <div className="fmt-sep" />
-
-          {/* Font size */}
-          {FONT_SIZES.map((s) => (
-            <button
-              key={s}
-              className={`fmt-btn ${fontSize === s ? 'active' : ''}`}
-              style={{ fontSize: 10, minWidth: 22 }}
-              onPointerDown={(e) => { e.preventDefault(); emit({ fontSize: s }); }}
-            >{s}</button>
-          ))}
 
           <div className="fmt-sep" />
 

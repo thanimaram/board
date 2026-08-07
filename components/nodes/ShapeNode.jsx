@@ -14,7 +14,7 @@ const SHAPE_META = {
 };
 
 const COLOR_PRESETS = [
-  { fill: '#ffffff', border: '#6366f1', text: '#1a1a2e' },
+  { fill: '#ffffff', border: '#478cca', text: '#1a1a2e' },
   { fill: '#ffffff', border: '#2563eb', text: '#1e3a8a' },
   { fill: '#ffffff', border: '#059669', text: '#14532d' },
   { fill: '#ffffff', border: '#d97706', text: '#78350f' },
@@ -26,7 +26,7 @@ const COLOR_PRESETS = [
 
 function hexToRgba(hex, alpha) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!r) return `rgba(99,102,241,${alpha})`;
+  if (!r) return `rgba(71,140,202,${alpha})`;
   return `rgba(${parseInt(r[1], 16)},${parseInt(r[2], 16)},${parseInt(r[3], 16)},${alpha})`;
 }
 
@@ -35,9 +35,10 @@ function ShapeNode({ data, selected, id }) {
     shape = 'rect',
     label = 'Node',
     fillColor = '#ffffff',
-    borderColor = '#6366f1',
+    borderColor = '#478cca',
     textColor = '#1a1a2e',
     collapsed = false,
+    nonEditable = false,
   } = data;
 
   const meta = SHAPE_META[shape] || { icon: '◎', typeName: shape };
@@ -59,7 +60,7 @@ function ShapeNode({ data, selected, id }) {
       className={`shape-node shape-${shape} ${selected ? 'selected' : ''}`}
       style={{ '--node-fill': fillColor, '--node-border': borderColor, '--node-text': textColor }}
       onPointerDown={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+      onDoubleClick={(e) => { if (nonEditable) return; e.stopPropagation(); setEditing(true); }}
     >
       {/* ── Visual background — clip-path only on this element ── */}
       <div className={`shape-bg shape-bg-${shape}`} />
@@ -88,14 +89,16 @@ function ShapeNode({ data, selected, id }) {
               <span className="shape-collapse-icon" style={{ fontSize: '10px', color: borderColor, opacity: 0.8 }}>
                 {collapsed ? '▶' : '▼'}
               </span>
-              <span className="shape-type-name" style={{ color: borderColor }}>{meta.typeName}</span>
+              <span className="shape-type-name" style={{ color: borderColor }}>
+                {data.headerLabel || meta.typeName}
+              </span>
             </div>
           </div>
         )}
 
         {(!collapsed || isSticky) && (
           <div className={`shape-body${isSticky ? ' sticky-body' : ''}`}>
-            {editing ? (
+            {editing && !nonEditable ? (
               <input
                 ref={inputRef}
                 className="shape-label-input"

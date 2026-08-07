@@ -1,12 +1,11 @@
 'use client';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useReactFlow } from '@xyflow/react';
 
-export function useDrawingTool({ activeTool, addLineNode, addBgShapeNode }) {
+export function useDrawingTool({ activeTool, addLineNode, addBgShapeNode, setActiveTool }) {
   const { screenToFlowPosition } = useReactFlow();
-  // preview stores SCREEN pixel coords for the fixed SVG overlay
   const [preview, setPreview] = useState(null);
-  const isLineDrawing = activeTool === 'line' || activeTool === 'dottedLine';
+  const isLineDrawing = activeTool === 'line' || activeTool === 'dottedLine' || activeTool === 'arrow' || activeTool === 'doubleArrow';
   const isShapeDrawing = activeTool.startsWith('bgshape-');
   const isDrawing = isLineDrawing || isShapeDrawing;
 
@@ -14,7 +13,12 @@ export function useDrawingTool({ activeTool, addLineNode, addBgShapeNode }) {
     (e) => {
       if (!isDrawing || e.button !== 0) return;
 
-      // Capture flow position at start
+      // If drag starts on a node handle — let ReactFlow create a connection, not draw a line
+      if (e.target.closest('.react-flow__handle')) {
+        if (setActiveTool) setActiveTool('select');
+        return;
+      }
+
       const flowStart = screenToFlowPosition({ x: e.clientX, y: e.clientY });
       setPreview({ x1: e.clientX, y1: e.clientY, x2: e.clientX, y2: e.clientY });
 
@@ -28,17 +32,21 @@ export function useDrawingTool({ activeTool, addLineNode, addBgShapeNode }) {
         
         if (dist > 5) {
           if (isLineDrawing) {
-            addLineNode(flowStart.x, flowStart.y, flowEnd.x, flowEnd.y,
-              activeTool === 'dottedLine' ? 'dotted' : 'solid');
+            const style = activeTool === 'dottedLine' ? 'dotted' : 
+                          activeTool === 'arrow' ? 'arrow' : 
+                          activeTool === 'doubleArrow' ? 'doubleArrow' : 'solid';
+            addLineNode(flowStart.x, flowStart.y, flowEnd.x, flowEnd.y, style);
           } else if (isShapeDrawing) {
+
             const shape = activeTool.replace('bgshape-', '');
-            // Calculate top-left pos and width/height from the drag points
             const minX = Math.min(flowStart.x, flowEnd.x);
             const minY = Math.min(flowStart.y, flowEnd.y);
             const width = Math.abs(flowEnd.x - flowStart.x);
             const height = Math.abs(flowEnd.y - flowStart.y);
             addBgShapeNode(shape, { x: minX, y: minY }, width, height);
           }
+          // Reset sidebar to Select after drawing finishes
+          if (setActiveTool) setActiveTool('select');
         }
         
         setPreview(null);
@@ -49,8 +57,9 @@ export function useDrawingTool({ activeTool, addLineNode, addBgShapeNode }) {
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [isDrawing, isLineDrawing, isShapeDrawing, activeTool, addLineNode, addBgShapeNode, screenToFlowPosition]
+    [isDrawing, isLineDrawing, isShapeDrawing, activeTool, addLineNode, addBgShapeNode, setActiveTool, screenToFlowPosition]
   );
 
   return { preview, onMouseDown, isShapeDrawing };
 }
+

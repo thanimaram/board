@@ -1,11 +1,51 @@
 'use client';
 import { useState } from 'react';
 
-const BASIC_TOOLS = [
-  { id: 'select',     icon: '↖', label: 'Select',      shortcut: 'S' },
-  { id: 'text',       icon: 'T',  label: 'Add Text',    shortcut: 'X' },
-  { id: 'sticky',     icon: '✦', label: 'Note',         shortcut: 'N' },
+// ── Static account → equipment data ──────────────────────────────────────────
+const ACCOUNTS = [
+  {
+    number: 'ACC-1001',
+    equipment: [
+      { id: 'a1e1', serial: 'EQ-1', name: 'Main Pump' },
+      { id: 'a1e2', serial: 'EQ-2', name: 'Pressure Valve' },
+      { id: 'a1e3', serial: 'EQ-3', name: 'Flow Meter' },
+      { id: 'a1e4', serial: 'EQ-4', name: 'Control Panel' },
+    ],
+  },
+  {
+    number: 'ACC-1002',
+    equipment: [
+      { id: 'a2e1', serial: 'EQ-1', name: 'Booster Pump' },
+      { id: 'a2e2', serial: 'EQ-2', name: 'Sand Filter' },
+      { id: 'a2e3', serial: 'EQ-3', name: 'Level Sensor' },
+      { id: 'a2e4', serial: 'EQ-4', name: 'UV Disinfector' },
+    ],
+  },
+  {
+    number: 'ACC-1003',
+    equipment: [
+      { id: 'a3e1', serial: 'EQ-1', name: 'Distribution Valve' },
+      { id: 'a3e2', serial: 'EQ-2', name: 'Pressure Gauge' },
+      { id: 'a3e3', serial: 'EQ-3', name: 'Water Meter' },
+      { id: 'a3e4', serial: 'EQ-4', name: 'SCADA Terminal' },
+    ],
+  },
+  {
+    number: 'ACC-1004',
+    equipment: [
+      { id: 'a4e1', serial: 'EQ-1', name: 'Submersible Pump' },
+      { id: 'a4e2', serial: 'EQ-2', name: 'Float Switch' },
+      { id: 'a4e3', serial: 'EQ-3', name: 'Chlorine Dosing Unit' },
+    ],
+  },
 ];
+
+const BASIC_TOOLS = [
+  { id: 'select', icon: '↖', label: 'Select', shortcut: 'S' },
+];
+
+// Sticky note is now a draggable node item
+const STICKY_TOOL = { id: 'sticky', icon: '✦', label: 'Note', shortcut: 'N' };
 
 const NODES = [
   { id: 'rect',         icon: '⇒', label: 'Source',       shortcut: 'R' },
@@ -17,24 +57,29 @@ const NODES = [
 ];
 
 const SHAPES = [
-  { id: 'line',         icon: '╱', label: 'Line',         shortcut: 'L' },
-  { id: 'dottedLine',   icon: '╌', label: 'Dotted Line',  shortcut: 'D' },
-  { id: 'rect',         icon: '▭', label: 'Rectangle',    shortcut: null },
-  { id: 'circle',       icon: '◯', label: 'Circle',       shortcut: null },
-  { id: 'diamond',      icon: '◇', label: 'Diamond',      shortcut: null },
-  { id: 'parallelogram',icon: '▱', label: 'Parallelogram', shortcut: null },
-  { id: 'region',       icon: '⬚', label: 'Zone Region',  shortcut: null },
+  { id: 'line',        icon: '╱', label: 'Line',        shortcut: 'L' },
+  { id: 'dottedLine',  icon: '╌', label: 'Dotted Line', shortcut: 'D' },
+  { id: 'rect',        icon: '▭', label: 'Container',   shortcut: null },
 ];
 
 import CustomNodeModal from './CustomNodeModal';
 
+const handleDragStart = (e, type, payload) => {
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('application/reactflow-type', type);
+  e.dataTransfer.setData('application/reactflow-payload', JSON.stringify(payload));
+};
+
 export default function Toolbar({ activeTool, setActiveTool, onClear, customTemplates = [], onAddCustomTemplate }) {
   const [showModal, setShowModal] = useState(false);
-  const [collapsed, setCollapsed] = useState({ tools: false, nodes: false, shapes: false });
+  const [collapsed, setCollapsed] = useState({ equipment: false, nodes: false, shapes: false });
+  const [selectedAccount, setSelectedAccount] = useState('');
 
   const toggleSection = (section) => {
     setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
   };
+
+  const activeAccount = ACCOUNTS.find(a => a.number === selectedAccount);
 
   return (
     <aside className="toolbar">
@@ -42,38 +87,53 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
         <span className="toolbar-title">Water Mapping System</span>
       </div>
 
-      {/* ── Basic Tools ──────────────────────────────── */}
-      <div 
-        className="toolbar-section-label" 
-        onClick={() => toggleSection('tools')}
+      {/* ── Equipment List ──────────────────────────────── */}
+      <div
+        className="toolbar-section-label"
+        onClick={() => toggleSection('equipment')}
         style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
       >
-        <span style={{ fontSize: '10px', opacity: 0.8 }}>{collapsed.tools ? '▶' : '▼'}</span>
-        Tools
+        <span style={{ fontSize: '10px', opacity: 0.8 }}>{collapsed.equipment ? '▶' : '▼'}</span>
+        Equipment List
       </div>
-      {!collapsed.tools && (
-        <nav className="toolbar-tools">
-          {BASIC_TOOLS.map((t) => (
-            <button
-              key={t.id}
-              className={`tool-btn ${
-                (activeTool === t.id || activeTool === `node-${t.id}`) ? 'active' : ''
-              }`}
-              onClick={() => {
-                if (t.id === 'sticky') {
-                  setActiveTool(`node-sticky`);
-                } else {
-                  setActiveTool(t.id);
-                }
-              }}
-              title={`${t.label}${t.shortcut ? ` (${t.shortcut})` : ''}`}
-              aria-label={t.label}
-            >
-              <span className="tool-label">{t.label}</span>
-              {t.shortcut && <span className="tool-shortcut">{t.shortcut}</span>}
-            </button>
-          ))}
-        </nav>
+      {!collapsed.equipment && (
+        <div className="equipment-section">
+          {/* Account number dropdown */}
+          <select
+            className="account-select"
+            value={selectedAccount}
+            onChange={(e) => setSelectedAccount(e.target.value)}
+          >
+            <option value="">— Select Account —</option>
+            {ACCOUNTS.map(a => (
+              <option key={a.number} value={a.number}>
+                {a.number}
+              </option>
+            ))}
+          </select>
+
+          {/* Account label */}
+          {/* Equipment list */}
+          {!selectedAccount && (
+            <p className="equipment-empty">Select an account to view equipment.</p>
+          )}
+          {activeAccount && (
+            <ul className="equipment-list">
+              {activeAccount.equipment.map((item) => (
+                <li
+                  key={item.id}
+                  className="equipment-item draggable-item"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, 'equipment', { serial: item.serial, name: item.name })}
+                  title={`${item.serial} — drag to board`}
+                >
+                  <span className="equip-serial" style={{ flex: 1, textAlign: 'center' }}>{item.serial}</span>
+                  <span className="drag-hint">drag</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
 
       <div className="toolbar-divider" />
@@ -90,31 +150,34 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
       {!collapsed.nodes && (
         <nav className="toolbar-tools">
           {NODES.map((n) => (
-            <button
+            <div
               key={n.id}
-              className={`tool-btn ${activeTool === `node-${n.id}` ? 'active' : ''}`}
-              onClick={() => setActiveTool(`node-${n.id}`)}
-              title={n.label}
+              className="tool-btn draggable-item"
+              draggable
+              onDragStart={(e) => handleDragStart(e, 'node', { shape: n.id })}
+              title={`${n.label} — drag to board`}
               aria-label={n.label}
             >
               <span className="tool-label">{n.label}</span>
-              {n.shortcut && <span className="tool-shortcut">{n.shortcut}</span>}
-            </button>
+              <span className="drag-hint">drag</span>
+            </div>
           ))}
           {customTemplates.map((c) => (
-            <button
+            <div
               key={c.id}
-              className={`tool-btn ${activeTool === c.id ? 'active' : ''}`}
-              onClick={() => setActiveTool(c.id)}
-              title={c.label}
+              className="tool-btn draggable-item"
+              draggable
+              onDragStart={(e) => handleDragStart(e, 'custom', { templateId: c.id })}
+              title={`${c.label} — drag to board`}
             >
               <span className="tool-label">{c.label}</span>
-            </button>
+              <span className="drag-hint">drag</span>
+            </div>
           ))}
           <button 
             className="tool-btn" 
             onClick={() => setShowModal(true)} 
-            style={{ color: 'var(--accent-violet)', fontWeight: 600, border: '1px dashed var(--accent-violet)', marginTop: '4px' }}
+            style={{ color: 'var(--accent-primary)', fontWeight: 600, border: '1px dashed var(--accent-primary)', marginTop: '4px' }}
           >
             <span className="tool-label">+ Create Custom</span>
           </button>
@@ -123,36 +186,89 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
 
       <div className="toolbar-divider" />
 
-      {/* ── Shapes (Background) ──────────────────────── */}
+      {/* ── Utils ──────────────────────────────────────── */}
       <div 
         className="toolbar-section-label"
         onClick={() => toggleSection('shapes')}
         style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
       >
         <span style={{ fontSize: '10px', opacity: 0.8 }}>{collapsed.shapes ? '▶' : '▼'}</span>
-        Shapes (Background)
+        Utils
       </div>
       {!collapsed.shapes && (
         <nav className="toolbar-tools">
+          {/* Select — click to activate */}
+          <button
+            className={`tool-btn ${activeTool === 'select' ? 'active' : ''}`}
+            onClick={() => setActiveTool('select')}
+            title="Select (S)"
+            aria-label="Select"
+          >
+            <span className="tool-icon">↖</span>
+            <span className="tool-label">Select</span>
+            <span className="tool-shortcut">S</span>
+          </button>
+          {/* Text — click to activate */}
+          <button
+            className={`tool-btn ${activeTool === 'text' ? 'active' : ''}`}
+            onClick={() => setActiveTool('text')}
+            title="Add Text (X)"
+            aria-label="Add Text"
+          >
+            <span className="tool-icon">T</span>
+            <span className="tool-label">Add Text</span>
+            <span className="tool-shortcut">X</span>
+          </button>
+          {/* Note — draggable */}
+          <div
+            className="tool-btn draggable-item"
+            draggable
+            onDragStart={(e) => handleDragStart(e, 'node', { shape: 'sticky' })}
+            title="Note — drag to board"
+            aria-label="Note"
+          >
+            <span className="tool-icon">✦</span>
+            <span className="tool-label">Note</span>
+            <span className="drag-hint">drag</span>
+          </div>
+          {/* Line & Dotted Line + background shapes */}
           {SHAPES.map((s) => (
-            <button
-              key={s.id}
-              className={`tool-btn ${
-                (activeTool === s.id || activeTool === `bgshape-${s.id}`) ? 'active' : ''
-              }`}
-              onClick={() => {
-                if (s.id === 'line' || s.id === 'dottedLine') {
-                  setActiveTool(s.id);
-                } else {
-                  setActiveTool(`bgshape-${s.id}`);
-                }
-              }}
-              title={s.label}
-              aria-label={s.label}
-            >
-              <span className="tool-label">{s.label}</span>
-              {s.shortcut && <span className="tool-shortcut">{s.shortcut}</span>}
-            </button>
+            s.id === 'line' || s.id === 'dottedLine' || s.id === 'rect' ? (
+              // Draw-tools — click to activate, then drag on canvas
+              <button
+                key={s.id}
+                className={`tool-btn ${
+                  activeTool === s.id || activeTool === `bgshape-${s.id}` ? 'active' : ''
+                }`}
+                onClick={() => {
+                  if (s.id === 'rect') {
+                    setActiveTool('bgshape-rect');
+                  } else {
+                    setActiveTool(s.id);
+                  }
+                }}
+                title={s.label}
+                aria-label={s.label}
+              >
+                <span className="tool-icon">{s.icon}</span>
+                <span className="tool-label">{s.label}</span>
+                {s.shortcut && <span className="tool-shortcut">{s.shortcut}</span>}
+              </button>
+            ) : (
+              // Background shapes are draggable
+              <div
+                key={s.id}
+                className="tool-btn draggable-item"
+                draggable
+                onDragStart={(e) => handleDragStart(e, 'bgshape', { shape: s.id })}
+                title={`${s.label} — drag to board`}
+                aria-label={s.label}
+              >
+                <span className="tool-icon">{s.icon}</span>
+                <span className="tool-label">{s.label}</span>
+                <span className="drag-hint">drag</span>
+              </div>
+            )
           ))}
         </nav>
       )}

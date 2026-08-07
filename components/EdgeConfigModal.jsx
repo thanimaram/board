@@ -2,13 +2,13 @@
 import { useState } from 'react';
 
 const LINE_COLORS = [
-  '#6366f1', '#ef4444', '#10b981', '#f59e0b',
+  '#478cca', '#ef4444', '#10b981', '#f59e0b',
   '#06b6d4', '#1a1a2e', '#7c3aed', '#ec4899',
 ];
 
 export default function EdgeConfigModal({ onClose, onSave }) {
   const [label, setLabel] = useState('');
-  const [color, setColor] = useState('#6366f1');
+  const [color, setColor] = useState('#478cca');
   const [animated, setAnimated] = useState(false);
 
   const handleSave = () => {

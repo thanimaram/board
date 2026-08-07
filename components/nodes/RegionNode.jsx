@@ -3,7 +3,7 @@ import { memo, useState, useRef, useEffect } from 'react';
 import { NodeResizer } from '@xyflow/react';
 
 const REGION_COLORS = [
-  'rgba(99,102,241,0.08)', 'rgba(37,99,235,0.08)', 'rgba(5,150,105,0.08)',
+  'rgba(71,140,202,0.08)', 'rgba(37,99,235,0.08)', 'rgba(5,150,105,0.08)',
   'rgba(217,119,6,0.08)', 'rgba(220,38,38,0.08)', 'rgba(124,58,237,0.08)',
   'rgba(100,116,139,0.08)', 'rgba(0,0,0,0.04)'
 ];
@@ -11,9 +11,9 @@ const REGION_COLORS = [
 function RegionNode({ data, selected, id }) {
   const {
     label = 'Region',
-    fillColor = 'rgba(99,102,241,0.08)',
-    borderColor = '#6366f1',
-    textColor = '#6366f1',
+    fillColor = 'rgba(71,140,202,0.08)',
+    borderColor = '#478cca',
+    textColor = '#478cca',
     width = 400,
     height = 300,
   } = data;

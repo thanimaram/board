@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -44,12 +44,14 @@ function BoardInner() {
     customTemplates, addCustomTemplate,
     onNodesChange, onEdgesChange, addConfiguredEdge,
     addNodeNode, addBgShapeNode, addTextNode, addLineNode,
+    copySelected, pasteCopied,
     updateNodeData, deleteSelected, setNodes, setEdges,
   } = useBoard();
 
   const { screenToFlowPosition } = useReactFlow();
 
   const [pendingConnection, setPendingConnection] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleConnectStart = useCallback((connection) => {
     setPendingConnection(connection);
@@ -108,7 +110,15 @@ function BoardInner() {
   }, [nodes, updateNodeData]);
 
   // ── Drawing preview ────────────────────────────────────────────────────
-  const { preview, onMouseDown, isShapeDrawing } = useDrawingTool({ activeTool, addLineNode, addBgShapeNode });
+  const { preview, onMouseDown, isShapeDrawing } = useDrawingTool({ activeTool, addLineNode, addBgShapeNode, setActiveTool });
+
+  // ── Track Mouse for Paste ──────────────────────────────────────────────
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    const onMove = (e) => { lastMousePos.current = { x: e.clientX, y: e.clientY }; };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────────
   useEffect(() => {
@@ -118,31 +128,49 @@ function BoardInner() {
     };
     const handle = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      // Copy / Paste
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        copySelected();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        const boardEl = document.querySelector('.board-canvas');
+        let flowPos = null;
+        if (boardEl) {
+          const rect = boardEl.getBoundingClientRect();
+          const mx = lastMousePos.current.x;
+          const my = lastMousePos.current.y;
+          if (mx >= rect.left && mx <= rect.right && my >= rect.top && my <= rect.bottom) {
+            flowPos = screenToFlowPosition({ x: mx, y: my });
+          }
+        }
+        pasteCopied(flowPos);
+        return;
+      }
+
       if (map[e.key.toLowerCase()]) setActiveTool(map[e.key.toLowerCase()]);
       if (e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
       if (e.key === 'Escape') setActiveTool('select');
     };
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
-  }, [setActiveTool, deleteSelected]);
+  }, [setActiveTool, deleteSelected, copySelected, pasteCopied, screenToFlowPosition]);
 
   // ── Pane click — place node/shape/text ────────────────────────────────
   const handlePaneClick = useCallback(
     (e) => {
-      // If we are drawing a line or drag-drawing a shape, handlePaneClick might still fire if it's a short click.
-      // We can let it create a default size bgshape if they just click.
-      if (activeTool === 'line' || activeTool === 'dottedLine') return;
+      // Drawing tools handle shape creation via mouseup — block paneClick to prevent duplicates
+      if (activeTool === 'line' || activeTool === 'dottedLine' || activeTool.startsWith('bgshape-')) return;
       const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
 
       if (activeTool === 'text') {
         addTextNode(pos);
-        // text auto-resets so the user can type in the new node immediately
         setActiveTool('select');
       } else if (activeTool.startsWith('node-')) {
         const shape = activeTool.replace('node-', '');
         addNodeNode(shape, pos);
-        // node tool stays active — click again to keep adding the same shape
-        // press S or Escape to go back to Select
+        setActiveTool('select');
       } else if (activeTool.startsWith('custom-')) {
         const templateId = activeTool;
         const template = customTemplates.find(c => c.id === templateId);
@@ -156,9 +184,6 @@ function BoardInner() {
             attributes: template.attributes.map(key => ({ key, value: '' })), // initialize empty values
           });
         }
-      } else if (activeTool.startsWith('bgshape-')) {
-        const shape = activeTool.replace('bgshape-', '');
-        addBgShapeNode(shape, pos);
       }
     },
     [activeTool, screenToFlowPosition, addTextNode, addNodeNode, addBgShapeNode, setActiveTool]
@@ -171,6 +196,61 @@ function BoardInner() {
       clearBoard();
     }
   }, [setNodes, setEdges]);
+
+  // ── Drag-and-drop from sidebar ────────────────────────────────────────
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    // only clear when leaving the canvas entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      const type = e.dataTransfer.getData('application/reactflow-type');
+      const payload = JSON.parse(e.dataTransfer.getData('application/reactflow-payload') || '{}');
+      if (!type) return;
+
+      const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY });
+
+      if (type === 'node') {
+        addNodeNode(payload.shape, pos);
+      } else if (type === 'bgshape') {
+        addBgShapeNode(payload.shape, pos);
+      } else if (type === 'equipment') {
+        addNodeNode('rect', pos, {
+          shape: 'rect',
+          headerLabel: 'Equipment',
+          label: payload.serial,
+          fillColor: '#f0fdf4',
+          borderColor: '#10b981',
+          textColor: '#065f46',
+          nonEditable: true,
+        });
+      } else if (type === 'custom') {
+        const template = customTemplates.find((c) => c.id === payload.templateId);
+        if (template) {
+          addNodeNode(template.shape, pos, {
+            shape: template.shape,
+            label: template.label,
+            fillColor: template.color.fill,
+            borderColor: template.color.border,
+            textColor: template.color.text,
+            attributes: template.attributes.map((key) => ({ key, value: '' })),
+          });
+        }
+      }
+    },
+    [screenToFlowPosition, addNodeNode, addBgShapeNode, customTemplates]
+  );
 
   const isDrawMode = activeTool === 'line' || activeTool === 'dottedLine' || isShapeDrawing;
 
@@ -212,9 +292,12 @@ function BoardInner() {
       />
 
       <div
-        className="board-canvas"
+        className={`board-canvas${isDragOver ? ' drag-over' : ''}`}
         style={{ cursor }}
         onMouseDown={onMouseDown}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         <ReactFlow
           nodes={nodesWithHandlers}
@@ -230,8 +313,8 @@ function BoardInner() {
           elevateNodesOnSelect={false}   // Prevent background shapes from covering nodes when clicked
           panOnDrag={!isDrawMode}
           selectionOnDrag={activeTool === 'select'}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.1}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
           deleteKeyCode={null}
           proOptions={{ hideAttribution: false }}
         >
@@ -257,8 +340,8 @@ function BoardInner() {
                 y={Math.min(preview.y1, preview.y2)}
                 width={Math.abs(preview.x2 - preview.x1)}
                 height={Math.abs(preview.y2 - preview.y1)}
-                fill="rgba(99,102,241,0.08)"
-                stroke="#6366f1"
+                fill="rgba(71,140,202,0.08)"
+                stroke="#478cca"
                 strokeWidth={2}
                 strokeDasharray={activeTool === 'bgshape-region' ? '8 5' : undefined}
               />
@@ -266,7 +349,7 @@ function BoardInner() {
               <line
                 x1={preview.x1} y1={preview.y1}
                 x2={preview.x2} y2={preview.y2}
-                stroke="#6366f1"
+                stroke="#478cca"
                 strokeWidth={2}
                 strokeDasharray={activeTool === 'dottedLine' ? '8 5' : undefined}
                 strokeLinecap="round"
