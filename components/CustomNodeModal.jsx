@@ -15,6 +15,7 @@ const COLOR_PRESETS = [
 
 export default function CustomNodeModal({ onClose, onSave }) {
   const [name, setName] = useState('');
+  const [headerLabel, setHeaderLabel] = useState('');
   const [shape, setShape] = useState('rect');
   const [colorIdx, setColorIdx] = useState(0);
   const [attributes, setAttributes] = useState([]); // Array of strings (keys)
@@ -31,6 +32,7 @@ export default function CustomNodeModal({ onClose, onSave }) {
     if (!name.trim()) return;
     onSave({
       label: name.trim(),
+      headerLabel: headerLabel.trim() || name.trim(),
       shape,
       color: COLOR_PRESETS[colorIdx],
       attributes,
@@ -44,13 +46,23 @@ export default function CustomNodeModal({ onClose, onSave }) {
         <h2>Create Custom Node</h2>
         
         <div className="modal-form-group">
-          <label>Node Name (Header)</label>
+          <label>Header Label</label>
+          <input 
+            type="text" 
+            value={headerLabel} 
+            onChange={(e) => setHeaderLabel(e.target.value)} 
+            placeholder="e.g. DB Server" 
+            autoFocus
+          />
+        </div>
+
+        <div className="modal-form-group">
+          <label>Node Name</label>
           <input 
             type="text" 
             value={name} 
             onChange={(e) => setName(e.target.value)} 
             placeholder="e.g. Database Server" 
-            autoFocus
           />
         </div>
 

@@ -178,6 +178,7 @@ function BoardInner() {
           addNodeNode(template.shape, pos, {
             shape: template.shape,
             label: template.label,
+            headerLabel: template.headerLabel || template.label,
             fillColor: template.color.fill,
             borderColor: template.color.border,
             textColor: template.color.text,
@@ -241,6 +242,7 @@ function BoardInner() {
           addNodeNode(template.shape, pos, {
             shape: template.shape,
             label: template.label,
+            headerLabel: template.headerLabel || template.label,
             fillColor: template.color.fill,
             borderColor: template.color.border,
             textColor: template.color.text,

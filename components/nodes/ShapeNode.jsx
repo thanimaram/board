@@ -85,14 +85,9 @@ function ShapeNode({ data, selected, id }) {
             }}
             onPointerDown={(e) => { e.stopPropagation(); data.onUpdate?.(id, { collapsed: !collapsed }); }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span className="shape-collapse-icon" style={{ fontSize: '10px', color: borderColor, opacity: 0.8 }}>
-                {collapsed ? '▶' : '▼'}
-              </span>
-              <span className="shape-type-name" style={{ color: borderColor }}>
-                {data.headerLabel || meta.typeName}
-              </span>
-            </div>
+            <span className="shape-type-name" style={{ color: borderColor }}>
+              {data.headerLabel || meta.typeName}
+            </span>
           </div>
         )}
 
