@@ -194,7 +194,6 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           >
             <span className="tool-icon">↖</span>
             <span className="tool-label">Select</span>
-            <span className="tool-shortcut">S</span>
           </button>
           {/* Text */}
           <button
@@ -205,7 +204,6 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           >
             <span className="tool-icon">T</span>
             <span className="tool-label">Add Text</span>
-            <span className="tool-shortcut">X</span>
           </button>
           {/* Note — draggable */}
           <div
@@ -237,7 +235,6 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
               >
                 <span className="tool-icon">{s.icon}</span>
                 <span className="tool-label">{s.label}</span>
-                {s.shortcut && <span className="tool-shortcut">{s.shortcut}</span>}
               </button>
             ) : (
               <div
