@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   ReactFlow,
   Background,
-  Controls,
   ReactFlowProvider,
   Panel,
   useReactFlow,
@@ -359,7 +358,6 @@ function BoardInner() {
           proOptions={{ hideAttribution: false }}
         >
           <Background variant="dots" gap={24} size={1.5} color="rgba(0,0,0,0.08)" />
-          <Controls className="board-controls" />
           <Panel position="top-right" className="board-panel">
             <span className="tool-badge">{toolLabel}</span>
           </Panel>
