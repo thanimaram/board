@@ -293,7 +293,7 @@ export default function Toolbar({
             aria-label="Note"
             {...dragProps('node', { shape: 'sticky' }, 'Note')}
           >
-            <span className="tool-icon">✦</span>
+            <span className="tool-icon">+</span>
             <span className="tool-label">Note</span>
             <span className="drag-hint">drag</span>
           </div>
