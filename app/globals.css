@@ -1053,3 +1053,192 @@ button { font-family: var(--font); cursor: pointer; }
   border-radius: 50%;
   animation: export-spin 0.65s linear infinite;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+   Breakpoint: ≤ 768px  →  sidebar becomes a slide-in drawer
+               ≤ 480px  →  canvas toolbar icons-only
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar backdrop (hidden on desktop, shown via JS on mobile) ─────────── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 199;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 180ms ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Hamburger button (hidden on desktop) ────────────────────────────────── */
+.mobile-menu-toggle {
+  display: none;           /* shown via media query */
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 50;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--text-primary);
+  transition: background 120ms, box-shadow 120ms;
+}
+.mobile-menu-toggle:hover { background: var(--bg-hover); }
+.mobile-menu-toggle:active { transform: scale(0.94); }
+
+/* ── Close button inside sidebar (hidden on desktop) ─────────────────────── */
+.sidebar-close-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  line-height: 1;
+  margin-left: auto;
+  transition: color 120ms, background 120ms;
+}
+.sidebar-close-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+/* ── Touch drag ghost ─────────────────────────────────────────────────────── */
+/* The floating label that follows the finger during touch-drag */
+.touch-drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  padding: 6px 14px;
+  background: var(--accent-primary);
+  color: white;
+  border-radius: 20px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  transform: translateY(-50%);
+  animation: ghostPop 100ms ease;
+  user-select: none;
+}
+@keyframes ghostPop {
+  from { opacity: 0; transform: translateY(-50%) scale(0.85); }
+  to   { opacity: 1; transform: translateY(-50%) scale(1); }
+}
+
+/* ── Tablet / Mobile (≤ 768px) ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Sidebar becomes a fixed overlay drawer sliding in from the left */
+  .toolbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100dvh;           /* dynamic viewport height — avoids mobile address-bar issues */
+    width: 220px;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: none;
+  }
+  /* Slide in when open */
+  .toolbar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Backdrop visible on mobile */
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  /* Close button visible inside sidebar on mobile */
+  .sidebar-close-btn {
+    display: flex;
+  }
+
+  /* Hamburger button visible on mobile */
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  /* Board canvas takes full width (sidebar is out of flex flow) */
+  .board-canvas {
+    width: 100vw !important;
+  }
+
+  /* Canvas top bar: scrollable horizontally, no text labels */
+  .canvas-top-bar {
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 1px;
+    top: 10px;
+  }
+  .canvas-top-bar::-webkit-scrollbar { display: none; }
+
+  /* Slightly larger tap targets */
+  .ctb-btn,
+  .ctb-icon-btn {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  /* Tool badge — smaller on mobile */
+  .tool-badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  /* Node handles — larger tap area on touch */
+  .react-flow__handle {
+    width: 14px !important;
+    height: 14px !important;
+    opacity: 1 !important;         /* always visible on touch screens */
+  }
+
+  /* Modal full-width on small screens */
+  .modal-content {
+    width: calc(100vw - 32px);
+    max-width: 420px;
+  }
+}
+
+/* ── Small phone (≤ 480px): icons-only canvas toolbar ───────────────────── */
+@media (max-width: 480px) {
+  /* Hide text labels in the top toolbar, show icons only */
+  .ctb-label {
+    display: none;
+  }
+
+  /* Tighter padding */
+  .ctb-btn {
+    padding: 6px 8px;
+  }
+
+  /* Toolbar slightly narrower */
+  .toolbar {
+    width: 200px;
+  }
+
+  /* Zoom readout smaller */
+  .ctb-zoom {
+    min-width: 32px;
+    font-size: 11px;
+  }
+}
+
+/* ── Ensure touch panning works on React Flow ────────────────────────────── */
+/* ReactFlow uses pointer events; these make sure it captures touch moves */
+.react-flow__pane {
+  touch-action: none;
+}

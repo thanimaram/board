@@ -47,6 +47,18 @@ const IconPDF = () => (
 const IconSpinner = () => (
   <span className="ct-spinner" />
 );
+const IconUndo = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 14 4 9 9 4"/>
+    <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+  </svg>
+);
+const IconRedo = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 14 20 9 15 4"/>
+    <path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
+  </svg>
+);
 
 /* ── CanvasToolbar ─────────────────────────────────────────────────────────── */
 export default function CanvasToolbar({
@@ -55,6 +67,10 @@ export default function CanvasToolbar({
   onExportPNG,
   onExportPDF,
   isExporting,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
 }) {
   const { zoomIn, zoomOut, fitView, getZoom } = useReactFlow();
   const [zoomPct, setZoomPct] = useState(75);
@@ -76,6 +92,30 @@ export default function CanvasToolbar({
 
   return (
     <div className="canvas-top-bar">
+
+      {/* Undo */}
+      <button
+        id="ct-undo"
+        className="ctb-icon-btn"
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+      >
+        <IconUndo />
+      </button>
+
+      {/* Redo */}
+      <button
+        id="ct-redo"
+        className="ctb-icon-btn"
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Y)"
+      >
+        <IconRedo />
+      </button>
+
+      <div className="ctb-sep" />
 
       {/* Pan toggle */}
       <button

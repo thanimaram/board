@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import CustomNodeModal from './CustomNodeModal';
 
 // ── Static account → equipment data ──────────────────────────────────────────
 const ACCOUNTS = [
@@ -41,46 +42,131 @@ const ACCOUNTS = [
 ];
 
 const NODES = [
-  { id: 'rect',          icon: '⇒', label: 'Source',       shortcut: 'R' },
-  { id: 'rounded',       icon: '↻', label: 'Transform',    shortcut: null },
-  { id: 'circle',        icon: '⊘', label: 'Filter',       shortcut: 'O' },
-  { id: 'diamond',       icon: '⊕', label: 'Router',       shortcut: null },
-  { id: 'parallelogram', icon: '≋', label: 'Stream',       shortcut: null },
-  { id: 'database',      icon: '⊟', label: 'Store',        shortcut: null },
+  { id: 'rect',          icon: '⇒', label: 'Source'       },
+  { id: 'rounded',       icon: '↻', label: 'Transform'    },
+  { id: 'circle',        icon: '⊘', label: 'Filter'       },
+  { id: 'diamond',       icon: '⊕', label: 'Router'       },
+  { id: 'parallelogram', icon: '≋', label: 'Stream'       },
+  { id: 'database',      icon: '⊟', label: 'Store'        },
 ];
 
 const SHAPES = [
-  { id: 'line',       icon: '╱', label: 'Line',        shortcut: 'L' },
-  { id: 'dottedLine', icon: '╌', label: 'Dotted Line', shortcut: 'D' },
-  { id: 'rect',       icon: '▭', label: 'Container',   shortcut: null },
+  { id: 'line',       icon: '╱', label: 'Line'        },
+  { id: 'dottedLine', icon: '╌', label: 'Dotted Line' },
+  { id: 'rect',       icon: '▭', label: 'Container'   },
 ];
 
-import CustomNodeModal from './CustomNodeModal';
-
+// ── Desktop drag ──────────────────────────────────────────────────────────────
 const handleDragStart = (e, type, payload) => {
   e.dataTransfer.effectAllowed = 'copy';
   e.dataTransfer.setData('application/reactflow-type', type);
   e.dataTransfer.setData('application/reactflow-payload', JSON.stringify(payload));
 };
 
-export default function Toolbar({ activeTool, setActiveTool, onClear, customTemplates = [], onAddCustomTemplate }) {
+// ── Touch drag — works on iOS / Android ──────────────────────────────────────
+/**
+ * Starts a touch-drag for a sidebar item.
+ * Creates a floating ghost element that follows the finger.
+ * On release over the canvas, calls onTouchDrop(type, payload, clientX, clientY).
+ */
+function startTouchDrag(e, type, payload, label, onTouchDrop, onSidebarClose) {
+  e.preventDefault(); // block page scroll while dragging
+
+  const touch = e.touches[0];
+  const touchId = touch.identifier;
+
+  // Ghost label following the finger
+  const ghost = document.createElement('div');
+  ghost.className = 'touch-drag-ghost';
+  ghost.textContent = label;
+  ghost.style.left = (touch.clientX - 50) + 'px';
+  ghost.style.top  = (touch.clientY - 20) + 'px';
+  document.body.appendChild(ghost);
+
+  // Track which elements are under the finger so we can highlight the canvas
+  let overCanvas = false;
+
+  const onMove = (ev) => {
+    ev.preventDefault();
+    const t = Array.from(ev.touches).find(t => t.identifier === touchId);
+    if (!t) return;
+    ghost.style.left = (t.clientX - 50) + 'px';
+    ghost.style.top  = (t.clientY - 20) + 'px';
+
+    // Highlight canvas drop zone
+    const el = document.querySelector('.board-canvas');
+    if (el) {
+      const r = el.getBoundingClientRect();
+      overCanvas = (t.clientX >= r.left && t.clientX <= r.right &&
+                    t.clientY >= r.top  && t.clientY <= r.bottom);
+      el.classList.toggle('drag-over', overCanvas);
+    }
+  };
+
+  const onEnd = (ev) => {
+    document.removeEventListener('touchmove', onMove, { passive: false });
+    document.removeEventListener('touchend',  onEnd);
+    ghost.remove();
+
+    // Remove canvas highlight
+    document.querySelector('.board-canvas')?.classList.remove('drag-over');
+
+    const t = Array.from(ev.changedTouches).find(t => t.identifier === touchId);
+    if (!t || !onTouchDrop) return;
+
+    const el = document.querySelector('.board-canvas');
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const inside = (t.clientX >= r.left && t.clientX <= r.right &&
+                    t.clientY >= r.top  && t.clientY <= r.bottom);
+    if (inside) {
+      onTouchDrop(type, payload, t.clientX, t.clientY);
+      onSidebarClose?.(); // close sidebar on mobile after a successful drop
+    }
+  };
+
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('touchend',  onEnd,  { once: false });
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export default function Toolbar({
+  activeTool, setActiveTool, onClear,
+  customTemplates = [], onAddCustomTemplate,
+  // Mobile props
+  isOpen,          // boolean — sidebar visible on mobile
+  onSidebarClose,  // () => void — called to close sidebar
+  onTouchDrop,     // (type, payload, x, y) => void
+}) {
   const [showModal, setShowModal] = useState(false);
   const [collapsed, setCollapsed] = useState({ equipment: false, nodes: false, shapes: false });
   const [selectedAccount, setSelectedAccount] = useState('');
 
-  const toggleSection = (section) => {
+  const toggleSection = (section) =>
     setCollapsed(prev => ({ ...prev, [section]: !prev[section] }));
-  };
 
   const activeAccount = ACCOUNTS.find(a => a.number === selectedAccount);
 
+  // Helper: attach both desktop and touch drag to a draggable item
+  const dragProps = (type, payload, label) => ({
+    draggable: true,
+    onDragStart: (e) => handleDragStart(e, type, payload),
+    onTouchStart: (e) => startTouchDrag(e, type, payload, label, onTouchDrop, onSidebarClose),
+  });
+
   return (
-    <aside className="toolbar">
+    <aside className={`toolbar${isOpen ? ' sidebar-open' : ''}`}>
+      {/* Close button visible on mobile */}
       <div className="toolbar-brand">
         <span className="toolbar-title">Water Mapping System</span>
+        <button
+          className="sidebar-close-btn"
+          onClick={onSidebarClose}
+          aria-label="Close sidebar"
+        >✕</button>
       </div>
 
-      {/* ── Equipment List ──────────────────────────────── */}
+      {/* ── Equipment List ────────────────────────────────── */}
       <div
         className="toolbar-section-label"
         onClick={() => toggleSection('equipment')}
@@ -111,9 +197,8 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
                 <li
                   key={item.id}
                   className="equipment-item draggable-item"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, 'equipment', { serial: item.serial, name: item.name })}
                   title={`${item.serial} — drag to board`}
+                  {...dragProps('equipment', { serial: item.serial, name: item.name }, item.serial)}
                 >
                   <span className="equip-serial" style={{ flex: 1, textAlign: 'center' }}>{item.serial}</span>
                   <span className="drag-hint">drag</span>
@@ -126,7 +211,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
 
       <div className="toolbar-divider" />
 
-      {/* ── Nodes ───────────────────────────────────── */}
+      {/* ── Nodes ─────────────────────────────────────────── */}
       <div
         className="toolbar-section-label"
         onClick={() => toggleSection('nodes')}
@@ -141,10 +226,9 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
             <div
               key={n.id}
               className="tool-btn draggable-item"
-              draggable
-              onDragStart={(e) => handleDragStart(e, 'node', { shape: n.id })}
               title={`${n.label} — drag to board`}
               aria-label={n.label}
+              {...dragProps('node', { shape: n.id }, n.label)}
             >
               <span className="tool-label">{n.label}</span>
               <span className="drag-hint">drag</span>
@@ -154,9 +238,8 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
             <div
               key={c.id}
               className="tool-btn draggable-item"
-              draggable
-              onDragStart={(e) => handleDragStart(e, 'custom', { templateId: c.id })}
               title={`${c.label} — drag to board`}
+              {...dragProps('custom', { templateId: c.id }, c.label)}
             >
               <span className="tool-label">{c.label}</span>
               <span className="drag-hint">drag</span>
@@ -174,7 +257,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
 
       <div className="toolbar-divider" />
 
-      {/* ── Utils ──────────────────────────────────────── */}
+      {/* ── Utils ─────────────────────────────────────────── */}
       <div
         className="toolbar-section-label"
         onClick={() => toggleSection('shapes')}
@@ -188,9 +271,8 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           {/* Select */}
           <button
             className={`tool-btn ${activeTool === 'select' ? 'active' : ''}`}
-            onClick={() => setActiveTool('select')}
-            title="Select (S)"
-            aria-label="Select"
+            onClick={() => { setActiveTool('select'); onSidebarClose?.(); }}
+            title="Select (S)" aria-label="Select"
           >
             <span className="tool-icon">↖</span>
             <span className="tool-label">Select</span>
@@ -198,9 +280,8 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           {/* Text */}
           <button
             className={`tool-btn ${activeTool === 'text' ? 'active' : ''}`}
-            onClick={() => setActiveTool('text')}
-            title="Add Text (X)"
-            aria-label="Add Text"
+            onClick={() => { setActiveTool('text'); onSidebarClose?.(); }}
+            title="Add Text (X)" aria-label="Add Text"
           >
             <span className="tool-icon">T</span>
             <span className="tool-label">Add Text</span>
@@ -208,30 +289,25 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           {/* Note — draggable */}
           <div
             className="tool-btn draggable-item"
-            draggable
-            onDragStart={(e) => handleDragStart(e, 'node', { shape: 'sticky' })}
             title="Note — drag to board"
             aria-label="Note"
+            {...dragProps('node', { shape: 'sticky' }, 'Note')}
           >
             <span className="tool-icon">✦</span>
             <span className="tool-label">Note</span>
             <span className="drag-hint">drag</span>
           </div>
-          {/* Line & Dotted Line + background shapes */}
+          {/* Line / Dotted Line / Container */}
           {SHAPES.map((s) => (
             s.id === 'line' || s.id === 'dottedLine' || s.id === 'rect' ? (
               <button
                 key={s.id}
                 className={`tool-btn ${activeTool === s.id || activeTool === `bgshape-${s.id}` ? 'active' : ''}`}
                 onClick={() => {
-                  if (s.id === 'rect') {
-                    setActiveTool('bgshape-rect');
-                  } else {
-                    setActiveTool(s.id);
-                  }
+                  setActiveTool(s.id === 'rect' ? 'bgshape-rect' : s.id);
+                  onSidebarClose?.();
                 }}
-                title={s.label}
-                aria-label={s.label}
+                title={s.label} aria-label={s.label}
               >
                 <span className="tool-icon">{s.icon}</span>
                 <span className="tool-label">{s.label}</span>
@@ -240,10 +316,9 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
               <div
                 key={s.id}
                 className="tool-btn draggable-item"
-                draggable
-                onDragStart={(e) => handleDragStart(e, 'bgshape', { shape: s.id })}
                 title={`${s.label} — drag to board`}
                 aria-label={s.label}
+                {...dragProps('bgshape', { shape: s.id }, s.label)}
               >
                 <span className="tool-icon">{s.icon}</span>
                 <span className="tool-label">{s.label}</span>
@@ -256,7 +331,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
 
       <div className="toolbar-divider" />
 
-      {/* ── Footer ───────────────────────────────────── */}
+      {/* ── Footer ────────────────────────────────────────── */}
       <div className="toolbar-footer">
         <button className="tool-btn danger" onClick={onClear} aria-label="Clear board">
           <span className="tool-label">Clear Board</span>

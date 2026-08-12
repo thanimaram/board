@@ -47,6 +47,7 @@ function BoardInner() {
     addNodeNode, addBgShapeNode, addTextNode, addLineNode,
     copySelected, pasteCopied,
     updateNodeData, deleteSelected, setNodes, setEdges,
+    undo, redo, canUndo, canRedo,
   } = useBoard();
 
   const { screenToFlowPosition } = useReactFlow();
@@ -55,8 +56,36 @@ function BoardInner() {
   const [isDragOver, setIsDragOver]               = useState(false);
   const [isExporting, setIsExporting]             = useState(false);
   const [isPanMode, setIsPanMode]                 = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen]         = useState(false);
 
-  const handleTogglePan = useCallback(() => setIsPanMode(p => !p), []);
+  const handleTogglePan     = useCallback(() => setIsPanMode(p => !p), []);
+  const handleToggleSidebar = useCallback(() => setIsSidebarOpen(o => !o), []);
+  const handleCloseSidebar  = useCallback(() => setIsSidebarOpen(false), []);
+
+  // ── Touch drop — converts touch coords → flow position and creates node ──
+  const handleTouchDrop = useCallback((type, payload, clientX, clientY) => {
+    const pos = screenToFlowPosition({ x: clientX, y: clientY });
+    if (type === 'node') {
+      addNodeNode(payload.shape, pos);
+    } else if (type === 'equipment') {
+      addNodeNode('rect', pos, {
+        shape: 'rect', headerLabel: 'Equipment', label: payload.serial,
+        fillColor: '#f0fdf4', borderColor: '#10b981', textColor: '#065f46',
+        nonEditable: true,
+      });
+    } else if (type === 'custom') {
+      const template = customTemplates.find(c => c.id === payload.templateId);
+      if (template) {
+        addNodeNode(template.shape, pos, {
+          shape: template.shape, label: template.label,
+          headerLabel: template.headerLabel || template.label,
+          fillColor: template.color.fill, borderColor: template.color.border,
+          textColor: template.color.text,
+          attributes: template.attributes.map(key => ({ key, value: '' })),
+        });
+      }
+    }
+  }, [screenToFlowPosition, addNodeNode, customTemplates]);
 
   const handleExportPNG = useCallback(async () => {
     setIsExporting(true);
@@ -158,7 +187,9 @@ function BoardInner() {
     const handle = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-      // Copy / Paste
+      // Undo / Redo via history stack
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { undo(); return; }
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { redo(); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
         copySelected();
         return;
@@ -314,12 +345,20 @@ function BoardInner() {
 
   return (
     <div className="board-root">
+      {/* Sidebar backdrop — tap to close on mobile */}
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={handleCloseSidebar} />
+      )}
+
       <Toolbar
         activeTool={activeTool}
         setActiveTool={setActiveTool}
         onClear={handleClear}
         customTemplates={customTemplates}
         onAddCustomTemplate={addCustomTemplate}
+        isOpen={isSidebarOpen}
+        onSidebarClose={handleCloseSidebar}
+        onTouchDrop={handleTouchDrop}
       />
 
       <div
@@ -330,14 +369,28 @@ function BoardInner() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* ── Top utility toolbar ─────────────────────────────────────── */}
+        {/* ── Top utility toolbar ──────────────────────────────────────── */}
         <CanvasToolbar
           isPanMode={isPanMode}
           onTogglePan={handleTogglePan}
           onExportPNG={handleExportPNG}
           onExportPDF={handleExportPDF}
           isExporting={isExporting}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
         />
+
+        {/* ── Hamburger — opens sidebar on mobile ──────────────────────── */}
+        <button
+          className="mobile-menu-toggle"
+          onClick={handleToggleSidebar}
+          aria-label="Open tools"
+          title="Open tools"
+        >
+          ☰
+        </button>
         <ReactFlow
           nodes={nodesWithHandlers}
           edges={edges}
