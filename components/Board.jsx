@@ -13,8 +13,10 @@ import '@xyflow/react/dist/style.css';
 import { useBoard } from '@/hooks/useBoard';
 import { useDrawingTool } from '@/hooks/useDrawingTool';
 import { clearBoard } from '@/lib/storage';
+import { exportAsPNG, exportAsPDF } from '@/lib/exportDiagram';
 
 import Toolbar from '@/components/Toolbar';
+import CanvasToolbar from '@/components/CanvasToolbar';
 import DefaultNode from '@/components/nodes/DefaultNode';
 import ShapeNode from '@/components/nodes/ShapeNode';
 import TextNode from '@/components/nodes/TextNode';
@@ -51,7 +53,35 @@ function BoardInner() {
   const { screenToFlowPosition } = useReactFlow();
 
   const [pendingConnection, setPendingConnection] = useState(null);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [isDragOver, setIsDragOver]               = useState(false);
+  const [isExporting, setIsExporting]             = useState(false);
+  const [isPanMode, setIsPanMode]                 = useState(false);
+
+  const handleTogglePan = useCallback(() => setIsPanMode(p => !p), []);
+
+  const handleExportPNG = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      await exportAsPNG('diagram');
+    } catch (err) {
+      console.error('PNG export failed:', err);
+      alert('PNG export failed. Please check your internet connection and try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
+  const handleExportPDF = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      await exportAsPDF('diagram');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      alert('PDF export failed. Please check your internet connection and try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
 
   const handleConnectStart = useCallback((connection) => {
     setPendingConnection(connection);
@@ -271,9 +301,9 @@ function BoardInner() {
     line: '╱ Draw Line',
     dottedLine: '╌ Dotted Line',
   }[activeTool] ?? (
-    activeTool.startsWith('node-') ? `⬜ Place Node` : 
-    activeTool.startsWith('bgshape-') ? `⬚ Place Shape` : activeTool
-  );
+      activeTool.startsWith('node-') ? `⬜ Place Node` :
+        activeTool.startsWith('bgshape-') ? `⬚ Place Shape` : activeTool
+    );
 
   if (!hydrated) {
     return (
@@ -295,12 +325,20 @@ function BoardInner() {
 
       <div
         className={`board-canvas${isDragOver ? ' drag-over' : ''}`}
-        style={{ cursor }}
+        style={{ cursor: isPanMode ? 'grab' : cursor }}
         onMouseDown={onMouseDown}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* ── Top utility toolbar ─────────────────────────────────────── */}
+        <CanvasToolbar
+          isPanMode={isPanMode}
+          onTogglePan={handleTogglePan}
+          onExportPNG={handleExportPNG}
+          onExportPDF={handleExportPDF}
+          isExporting={isExporting}
+        />
         <ReactFlow
           nodes={nodesWithHandlers}
           edges={edges}
@@ -313,8 +351,8 @@ function BoardInner() {
           nodesDraggable={true}          // always draggable
           nodesConnectable={true}        // always connectable
           elevateNodesOnSelect={false}   // Prevent background shapes from covering nodes when clicked
-          panOnDrag={!isDrawMode}
-          selectionOnDrag={activeTool === 'select'}
+          panOnDrag={isPanMode || !isDrawMode}
+          selectionOnDrag={!isPanMode && activeTool === 'select'}
           minZoom={0.1}
           defaultViewport={{ x: 0, y: 0, zoom: 0.75 }}
           deleteKeyCode={null}

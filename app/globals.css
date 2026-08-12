@@ -858,3 +858,198 @@ button { font-family: var(--font); cursor: pointer; }
   width: 22px;
   border-radius: 2px;
 }
+
+/* ─── Export Buttons ────────────────────────────────────────────────────── */
+.toolbar-export {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px 4px;
+}
+.export-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background var(--fast), box-shadow var(--fast), transform var(--fast);
+  letter-spacing: 0.02em;
+}
+.export-btn:active:not(:disabled) { transform: scale(0.96); }
+.export-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.export-btn--png {
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.35);
+  color: #0d9c6b;
+}
+.export-btn--png:hover:not(:disabled) {
+  background: rgba(16,185,129,0.18);
+  border-color: rgba(16,185,129,0.6);
+  box-shadow: 0 2px 8px rgba(16,185,129,0.18);
+}
+
+.export-btn--pdf {
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.3);
+  color: #dc2626;
+}
+.export-btn--pdf:hover:not(:disabled) {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.55);
+  box-shadow: 0 2px 8px rgba(239,68,68,0.18);
+}
+
+.export-btn-icon { font-size: 13px; line-height: 1; }
+
+/* Spinner for loading state */
+.export-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: export-spin 0.7s linear infinite;
+}
+@keyframes export-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Canvas Top Bar ─────────────────────────────────────────────────────── */
+/* Floating toolbar at the top of the canvas: Pan | Zoom | Fit | PNG | PDF   */
+.canvas-top-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: 10px;
+  padding: 5px 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(8px);
+
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* Separator between groups */
+.ctb-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.10);
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
+/* Generic button */
+.ctb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #374151;
+  font-family: var(--font);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms, color 120ms, border-color 120ms, box-shadow 120ms;
+}
+.ctb-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+.ctb-btn:active { transform: scale(0.95); }
+.ctb-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* Active / toggled state (Pan) */
+.ctb-btn--active {
+  background: rgba(37, 99, 235, 0.1);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: #2563eb;
+}
+.ctb-btn--active:hover {
+  background: rgba(37, 99, 235, 0.16);
+  color: #1d4ed8;
+}
+
+/* Icon-only button (zoom in / zoom out) */
+.ctb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #374151;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  flex-shrink: 0;
+}
+.ctb-icon-btn:hover { background: #f3f4f6; color: #111827; }
+.ctb-icon-btn:active { transform: scale(0.9); }
+
+/* Zoom percentage readout */
+.ctb-zoom {
+  min-width: 38px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  font-family: var(--font);
+  letter-spacing: 0.01em;
+}
+
+/* Button label text */
+.ctb-label {
+  font-size: 12.5px;
+}
+
+/* PNG button accent */
+.ctb-btn--png {
+  color: #059669;
+}
+.ctb-btn--png:hover {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #047857;
+}
+
+/* PDF button accent */
+.ctb-btn--pdf {
+  color: #dc2626;
+}
+.ctb-btn--pdf:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #b91c1c;
+}
+
+/* Spinner inside buttons */
+.ct-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: export-spin 0.65s linear infinite;
+}

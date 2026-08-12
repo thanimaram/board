@@ -40,26 +40,19 @@ const ACCOUNTS = [
   },
 ];
 
-const BASIC_TOOLS = [
-  { id: 'select', icon: '↖', label: 'Select', shortcut: 'S' },
-];
-
-// Sticky note is now a draggable node item
-const STICKY_TOOL = { id: 'sticky', icon: '✦', label: 'Note', shortcut: 'N' };
-
 const NODES = [
-  { id: 'rect',         icon: '⇒', label: 'Source',       shortcut: 'R' },
-  { id: 'rounded',      icon: '↻', label: 'Transform',    shortcut: null },
-  { id: 'circle',       icon: '⊘', label: 'Filter',       shortcut: 'O' },
-  { id: 'diamond',      icon: '⊕', label: 'Router',       shortcut: null },
-  { id: 'parallelogram',icon: '≋', label: 'Stream',       shortcut: null },
-  { id: 'database',     icon: '⊟', label: 'Store',        shortcut: null },
+  { id: 'rect',          icon: '⇒', label: 'Source',       shortcut: 'R' },
+  { id: 'rounded',       icon: '↻', label: 'Transform',    shortcut: null },
+  { id: 'circle',        icon: '⊘', label: 'Filter',       shortcut: 'O' },
+  { id: 'diamond',       icon: '⊕', label: 'Router',       shortcut: null },
+  { id: 'parallelogram', icon: '≋', label: 'Stream',       shortcut: null },
+  { id: 'database',      icon: '⊟', label: 'Store',        shortcut: null },
 ];
 
 const SHAPES = [
-  { id: 'line',        icon: '╱', label: 'Line',        shortcut: 'L' },
-  { id: 'dottedLine',  icon: '╌', label: 'Dotted Line', shortcut: 'D' },
-  { id: 'rect',        icon: '▭', label: 'Container',   shortcut: null },
+  { id: 'line',       icon: '╱', label: 'Line',        shortcut: 'L' },
+  { id: 'dottedLine', icon: '╌', label: 'Dotted Line', shortcut: 'D' },
+  { id: 'rect',       icon: '▭', label: 'Container',   shortcut: null },
 ];
 
 import CustomNodeModal from './CustomNodeModal';
@@ -98,7 +91,6 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
       </div>
       {!collapsed.equipment && (
         <div className="equipment-section">
-          {/* Account number dropdown */}
           <select
             className="account-select"
             value={selectedAccount}
@@ -106,14 +98,10 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           >
             <option value="">— Select Account —</option>
             {ACCOUNTS.map(a => (
-              <option key={a.number} value={a.number}>
-                {a.number}
-              </option>
+              <option key={a.number} value={a.number}>{a.number}</option>
             ))}
           </select>
 
-          {/* Account label */}
-          {/* Equipment list */}
           {!selectedAccount && (
             <p className="equipment-empty">Select an account to view equipment.</p>
           )}
@@ -139,7 +127,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
       <div className="toolbar-divider" />
 
       {/* ── Nodes ───────────────────────────────────── */}
-      <div 
+      <div
         className="toolbar-section-label"
         onClick={() => toggleSection('nodes')}
         style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -174,9 +162,9 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
               <span className="drag-hint">drag</span>
             </div>
           ))}
-          <button 
-            className="tool-btn" 
-            onClick={() => setShowModal(true)} 
+          <button
+            className="tool-btn"
+            onClick={() => setShowModal(true)}
             style={{ color: 'var(--accent-primary)', fontWeight: 600, border: '1px dashed var(--accent-primary)', marginTop: '4px' }}
           >
             <span className="tool-label">+ Create Custom</span>
@@ -187,7 +175,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
       <div className="toolbar-divider" />
 
       {/* ── Utils ──────────────────────────────────────── */}
-      <div 
+      <div
         className="toolbar-section-label"
         onClick={() => toggleSection('shapes')}
         style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -197,7 +185,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
       </div>
       {!collapsed.shapes && (
         <nav className="toolbar-tools">
-          {/* Select — click to activate */}
+          {/* Select */}
           <button
             className={`tool-btn ${activeTool === 'select' ? 'active' : ''}`}
             onClick={() => setActiveTool('select')}
@@ -208,7 +196,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
             <span className="tool-label">Select</span>
             <span className="tool-shortcut">S</span>
           </button>
-          {/* Text — click to activate */}
+          {/* Text */}
           <button
             className={`tool-btn ${activeTool === 'text' ? 'active' : ''}`}
             onClick={() => setActiveTool('text')}
@@ -234,12 +222,9 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
           {/* Line & Dotted Line + background shapes */}
           {SHAPES.map((s) => (
             s.id === 'line' || s.id === 'dottedLine' || s.id === 'rect' ? (
-              // Draw-tools — click to activate, then drag on canvas
               <button
                 key={s.id}
-                className={`tool-btn ${
-                  activeTool === s.id || activeTool === `bgshape-${s.id}` ? 'active' : ''
-                }`}
+                className={`tool-btn ${activeTool === s.id || activeTool === `bgshape-${s.id}` ? 'active' : ''}`}
                 onClick={() => {
                   if (s.id === 'rect') {
                     setActiveTool('bgshape-rect');
@@ -255,7 +240,6 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
                 {s.shortcut && <span className="tool-shortcut">{s.shortcut}</span>}
               </button>
             ) : (
-              // Background shapes are draggable
               <div
                 key={s.id}
                 className="tool-btn draggable-item"
@@ -289,7 +273,7 @@ export default function Toolbar({ activeTool, setActiveTool, onClear, customTemp
       </div>
 
       {showModal && (
-        <CustomNodeModal 
+        <CustomNodeModal
           onClose={() => setShowModal(false)}
           onSave={onAddCustomTemplate}
         />
